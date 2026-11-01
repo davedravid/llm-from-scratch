@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiny LLM Workbench</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f6f5f1, #191a1c); --panel: light-dark(#ffffff, #232528);
+  --text: light-dark(#1f2328, #e8e8e6); --muted: light-dark(#626a73, #a2a8ae);
+  --line: light-dark(#dedcd5, #3a3d41); --accent: light-dark(#1f5f8b, #79b8e0);
+  --accent-text: light-dark(#ffffff, #10212d); --chip: light-dark(#eeece6, #303337);
+  --ok: light-dark(#1d7044, #6fcf97); --warn: light-dark(#8a5a00, #e3b45c); --bad: light-dark(#b3261e, #f28b82);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, "Segoe UI", sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 22px; margin: 0; }
+h2 { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+.sub { color: var(--muted); margin: 2px 0 20px; }
+.layout { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 16px; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+label { display: block; font-weight: 600; margin: 14px 0 4px; }
+select, textarea, button { font: inherit; color: inherit; }
+select, textarea { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+textarea { resize: vertical; min-height: 70px; }
+.about { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { background: var(--chip); border: 0; border-radius: 6px; padding: 3px 9px; font-size: 13px; cursor: pointer; }
+.chip:hover { outline: 1px solid var(--accent); }
+.range { display: flex; justify-content: space-between; font-weight: 600; margin-top: 14px; }
+.range span { font-weight: 400; color: var(--muted); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.check { display: flex; gap: 8px; align-items: start; font-weight: 400; margin-top: 12px; }
+.check input { margin-top: 4px; }
+button.primary, button.approve { width: 100%; margin-top: 16px; padding: 9px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-text); font-weight: 600; cursor: pointer; }
+button.primary:disabled { opacity: .6; cursor: wait; }
+button.link { background: none; border: 0; color: var(--accent); padding: 0; margin-top: 10px; cursor: pointer; text-decoration: underline; font-size: 13px; }
+.answer { font-size: 18px; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 28px; }
+.answer .prompt { color: var(--muted); }
+.answer.empty { color: var(--muted); font-size: 15px; }
+.badge { display: inline-block; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.allowed, .passed { color: var(--ok); } .flagged, .warned { color: var(--warn); } .blocked, .blocked_input, .blocked_output, .stopped, .error { color: var(--bad); } .off { color: var(--muted); }
+.reasons { margin: 10px 0 0; padding-left: 18px; color: var(--warn); font-size: 14px; }
+.step { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.step:first-of-type { border-top: 0; }
+.state { font-size: 13px; font-weight: 600; }
+.step b { display: block; }
+.step b small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+.step div div { overflow-wrap: anywhere; font-size: 14px; }
+.tokens { display: flex; flex-wrap: wrap; gap: 3px; }
+.token { background: var(--chip); border-radius: 4px; padding: 1px 5px; font: 13px ui-monospace, Consolas, monospace; white-space: pre; }
+.bar { display: grid; grid-template-columns: 96px minmax(0, 1fr) 48px; gap: 8px; align-items: center; margin: 4px 0; font-size: 13px; }
+.bar code { font-family: ui-monospace, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+.track { background: var(--chip); border-radius: 3px; height: 10px; }
+.fill { background: var(--accent); height: 100%; border-radius: 3px; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.transcript { font: 13px/1.6 ui-monospace, Consolas, monospace; margin: 0; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.approval { border: 1px solid var(--warn); border-radius: 6px; padding: 10px; margin-top: 12px; }
+.approval code { display: block; margin: 6px 0; overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
+@media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tiny LLM Workbench</h1>
+  <p class="sub">Try the models we built, and see each step between your text and the answer.</p>
+  <div class="layout">
+    <form class="panel" id="form">
+      <label for="mode" style="margin-top:0">Model</label>
+      <select id="mode"></select>
+      <p class="about" id="about"></p>
+      <label for="prompt">Your text</label>
+      <textarea id="prompt"></textarea>
+      <div class="chips" id="examples"></div>
+      <div id="sampling">
+        <div class="range"><label for="temperature" style="margin:0">Temperature</label><span id="temperatureValue"></span></div>
+        <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.8">
+        <div class="range"><label for="top_p" style="margin:0">Top-p</label><span id="topPValue"></span></div>
+        <input type="range" id="top_p" min="0.1" max="1" step="0.05" value="0.9">
+        <div class="range"><label for="tokens" style="margin:0">Length</label><span id="tokensValue"></span></div>
+        <input type="range" id="tokens" min="5" max="100" step="5" value="40">
+      </div>
+      <label class="check"><input type="checkbox" id="guards" checked> Use input and output guardrails</label>
+      <div id="toolOptions">
+        <label class="check"><input type="checkbox" id="grant"> Grant the delete tool (each delete still needs your approval)</label>
+        <button type="button" class="link" id="reset">Restore deleted facts</button>
+      </div>
+      <button class="primary" id="send">Run</button>
+    </form>
+    <div>
+      <section class="panel" aria-live="polite">
+        <h2>Answer</h2>
+        <div class="badge" id="badge" hidden></div>
+        <div class="answer empty" id="answer">Choose an example or type something, then press Run.</div>
+        <ul class="reasons" id="reasons" hidden></ul>
+        <div class="approval" id="approval" hidden>
+          <strong>The model proposed this action:</strong>
+          <code id="approvalCall"></code>
+          <button type="button" class="approve" id="approve" style="margin-top:4px">Approve this exact call</button>
+        </div>
+      </section>
+      <section class="panel" id="transcriptPanel" hidden>
+        <h2>The conversation between model and application</h2>
+        <pre class="transcript" id="transcript"></pre>
+      </section>
+      <section class="panel" id="stepsPanel" hidden>
+        <h2>What happened, step by step</h2>
+        <div id="steps"></div>
+      </section>
+      <section class="panel" id="tokensPanel" hidden>
+        <h2>What the model reads: your text as tokens</h2>
+        <div class="tokens" id="tokenList"></div>
+      </section>
+      <section class="panel" id="nextPanel" hidden>
+        <h2>Most likely next tokens, at these settings</h2>
+        <div id="next"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let models = [];
+const statusText = { allowed: "Passed the checks", flagged: "Answered with a warning", blocked_input: "Blocked before reaching the model",
+  blocked_output: "Written by the model, but blocked before reaching you", stopped: "Stopped: too many tool calls",
+  empty_output: "The model wrote nothing", rejected_input: "Rejected by the tool harness", error: "Error" };
+const stateText = { passed: "Passed", warned: "Warning", blocked: "Refused", off: "Off" };
+
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function showModel() {
+  const model = models.find(m => m.id === $("mode").value);
+  $("about").textContent = model.about;
+  $("examples").replaceChildren(...model.examples.map(example => {
+    const chip = element("button", "chip", example);
+    chip.type = "button";
+    chip.onclick = () => { $("prompt").value = example; run(); };
+    return chip;
+  }));
+  const isTools = model.id === "tools";
+  $("sampling").hidden = isTools;
+  $("toolOptions").hidden = !isTools;
+  $("prompt").value = model.examples[0];
+}
+
+function showRanges() {
+  $("temperatureValue").textContent = $("temperature").value === "0" ? "0 (always the top token)" : $("temperature").value;
+  $("topPValue").textContent = $("top_p").value;
+  $("tokensValue").textContent = $("tokens").value + " tokens";
+}
+
+function showResult(result, prompt) {
+  $("badge").hidden = false;
+  $("badge").className = "badge " + result.status;
+  $("badge").textContent = statusText[result.status] || result.status;
+  const answer = $("answer");
+  answer.className = "answer";
+  answer.replaceChildren();
+  if (result.mode === "story") answer.append(element("span", "prompt", prompt));
+  answer.append(result.answer || (result.mode === "story" ? "" : "(no answer)"));
+  $("reasons").hidden = !result.reasons.length;
+  $("reasons").replaceChildren(...result.reasons.map(reason => element("li", "", reason)));
+
+  $("approval").hidden = !result.approval_request;
+  if (result.approval_request) {
+    $("approvalCall").textContent = JSON.stringify(result.approval_request);
+    $("approve").onclick = () => run(result.approval_request);
+  }
+  $("transcriptPanel").hidden = !result.transcript;
+  $("transcript").textContent = result.transcript || "";
+  $("stepsPanel").hidden = false;
+  $("steps").replaceChildren(...result.steps.map(step => {
+    const row = element("div", "step");
+    row.append(element("div", "state " + step.state, stateText[step.state]));
+    const body = element("div");
+    const title = element("b", "", step.name);
+    title.append(element("small", "", step.phase === "app" ? "application" : "Phase " + step.phase));
+    body.append(title, element("div", "", step.detail));
+    row.append(body);
+    return row;
+  }));
+  $("tokensPanel").hidden = !result.tokens.length;
+  $("tokenList").replaceChildren(...result.tokens.map(token => element("span", "token", token)));
+  $("nextPanel").hidden = !result.next_tokens.length;
+  $("next").replaceChildren(...result.next_tokens.map(item => {
+    const row = element("div", "bar");
+    row.append(element("code", "", item.token));
+    const track = element("div", "track");
+    const fill = element("div", "fill");
+    fill.style.width = (item.p * 100).toFixed(1) + "%";
+    track.append(fill);
+    row.append(track, element("div", "num", (item.p * 100).toFixed(1) + "%"));
+    return row;
+  }));
+}
+
+async function run(approvedCall) {
+  const prompt = $("prompt").value;
+  $("send").disabled = true;
+  $("send").textContent = "Running...";
+  try {
+    const response = await fetch("/api/respond", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: $("mode").value, prompt, guards: $("guards").checked, grant_delete: $("grant").checked,
+        temperature: Number($("temperature").value), top_p: Number($("top_p").value), tokens: Number($("tokens").value),
+        approved_call: approvedCall || null }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+    showResult(result, prompt);
+  } catch (error) {
+    $("badge").hidden = false;
+    $("badge").className = "badge error";
+    $("badge").textContent = "Couldn't run that";
+    $("answer").className = "answer empty";
+    $("answer").textContent = error.message;
+    for (const id of ["reasons", "approval", "transcriptPanel", "stepsPanel", "tokensPanel", "nextPanel"]) $(id).hidden = true;
+  } finally {
+    $("send").disabled = false;
+    $("send").textContent = "Run";
+  }
+}
+
+$("form").onsubmit = event => { event.preventDefault(); run(); };
+$("mode").onchange = showModel;
+for (const id of ["temperature", "top_p", "tokens"]) $(id).oninput = showRanges;
+$("reset").onclick = async () => {
+  await fetch("/api/reset", { method: "POST" });
+  $("reset").textContent = "Deleted facts restored";
+  setTimeout(() => { $("reset").textContent = "Restore deleted facts"; }, 1500);
+};
+
+fetch("/api/info").then(response => response.json()).then(info => {
+  models = info.models;
+  $("mode").replaceChildren(...models.map(model => {
+    const option = element("option", "", `${model.label} (Phase ${model.phase})`);
+    option.value = model.id;
+    return option;
+  }));
+  $("mode").value = models.some(m => m.id === "tools") ? "tools" : models[0].id;
+  showModel();
+  showRanges();
+});
+</script>
+</body>
+</html>

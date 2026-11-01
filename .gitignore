@@ -1,0 +1,13 @@
+# Python environment and caches: large and re-creatable
+.venv/
+__pycache__/
+*.pyc
+
+# Local app settings, which contain this PC's paths
+.claude/
+
+# A copy of someone else's video transcript: keep it on this PC only
+docs/transcript.txt
+
+# Regenerated every time the evaluation suite runs
+phase5b_evaluation/eval_results.json

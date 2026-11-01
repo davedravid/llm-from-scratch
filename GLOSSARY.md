@@ -1,0 +1,124 @@
+# Glossary
+
+Terms are added as each phase introduces them.
+
+- **LLM (large language model)**: a neural network trained to predict the next token of text, given the tokens before it.
+- **Model**: in practice, a file of learned numbers (weights) plus the code that knows how to use them.
+- **Training**: adjusting a model's weights so its predictions on example data become less wrong.
+- **Inference**: using an already-trained model to produce outputs. No weights change.
+- **CPU / GPU**: general-purpose processor / graphics processor. GPUs do many multiplications in parallel, which makes training much faster. We use the CPU.
+- **Rule-based system**: a program whose every behaviour was written by hand as if/then rules. Eliza (1966) is the classic example. *(Phase 1)*
+- **Black box**: anything you treat only by its inputs and outputs. Our chatbot and later our LLM both have the shape `respond(text) -> text`. *(Phase 1)*
+- **Normalisation**: cleaning input into a standard form (lowercase, no punctuation) before processing it. *(Phase 1)*
+- **Fallback**: the default reply when no rule matches. *(Phase 1)*
+- **Input validation**: checks the *application* runs before the bot or model sees the input (empty, too long, ...). It doesn't depend on the bot behaving well. *(Phase 1)*
+- **Function**: a named, reusable piece of code that takes inputs and returns an output, e.g. `respond(message)`. *(Phase 1)*
+- **Unit test**: a small automatic check that one piece of code does what we expect. *(Phase 1)*
+- **Neural network**: layers of simple units (neurons). Each takes numbers in, multiplies them by weights, adds a bias, and squashes the result. *(Phase 2)*
+- **Weight**: a learned number saying how strongly one neuron's output affects the next. *(Phase 2)*
+- **Bias**: a learned number added to a neuron's total, shifting when it "switches on". *(Phase 2)*
+- **Parameters**: all the learned numbers (weights + biases). Our XOR net has 17; GPT-3 has 175 billion. *(Phase 2)*
+- **Hidden layer**: neurons between input and output. They let the network build intermediate features, which is what makes XOR solvable. *(Phase 2)*
+- **Activation function (sigmoid)**: the squashing step. Sigmoid maps any number to 0..1. Without it, stacked layers collapse into one straight-line rule. *(Phase 2)*
+- **Loss**: one number for how wrong the predictions are. We use mean squared error, the average of (output - target)². *(Phase 2)*
+- **Epoch**: one full pass over the training data. *(Phase 2)*
+- **Learning rate**: how big a step each weight takes per update. Too small is slow, too big overshoots and fails. *(Phase 2)*
+- **Gradient**: for each weight, which direction (and how strongly) changing it would change the loss. *(Phase 2)*
+- **Backpropagation**: computing every weight's gradient by passing the error backwards from the output, layer by layer (the chain rule from calculus). *(Phase 2)*
+- **Gradient descent**: repeatedly nudging every weight a small step against its gradient so the loss goes down. *(Phase 2)*
+- **Random seed**: a number that fixes the "random" starting weights so a run can be repeated exactly. *(Phase 2)*
+- **Linearly separable**: a problem where one straight line can split the 1s from the 0s. AND and OR are; XOR isn't. *(Phase 2)*
+- **Token**: the unit of text a model reads and writes: a word, part of a word, a character or punctuation. *(Phase 3a)*
+- **Tokenizer**: the program that turns text into tokens and token IDs (encode), and back again (decode). It's trained separately from, and before, the model. *(Phase 3a)*
+- **Token ID**: a token's position number in the vocabulary. The number itself means nothing; it's just an index. *(Phase 3a)*
+- **Vocabulary**: the fixed list of every token the tokenizer (and so the model) knows. *(Phase 3a)*
+- **BPE (byte pair encoding)**: builds a vocabulary by repeatedly merging the most frequent neighbouring pair of pieces. *(Phase 3a)*
+- **Merge**: one learned rule, "glue piece A and piece B into AB". The tokenizer file is essentially the ordered list of merges. *(Phase 3a)*
+- **Pre-tokenization**: splitting text into chunks (here, words with their leading space) before BPE, so merges never cross word boundaries. *(Phase 3a)*
+- **`<unk>` (unknown token)**: a placeholder for anything not in the vocabulary. Information is lost. Byte-level tokenizers avoid it. *(Phase 3a)*
+- **Byte-level BPE**: BPE that starts from the 256 possible bytes instead of characters, so any text, emoji included, can be encoded. Used by GPT-2 onwards. *(Phase 3a)*
+- **Vector**: a list of numbers, which you can picture as a point or an arrow in space. Ours have 16 numbers; GPT-3's have 12,288. *(Phase 3b)*
+- **Embedding**: a learned vector for each token, placed so that tokens used in similar ways are close together. *(Phase 3b)*
+- **Dimension**: how many numbers each vector has. More dimensions can hold more distinctions, but need more data. *(Phase 3b)*
+- **Distributional hypothesis**: "you shall know a word by the company it keeps". Meaning is inferred from neighbouring words. *(Phase 3b)*
+- **Corpus**: the body of text a model is trained on. *(Phase 3b)*
+- **Skip-gram**: the word2vec setup that predicts a word's neighbours from the word itself, trained on (word, neighbour) pairs. *(Phase 3b)*
+- **Context window (word2vec)**: how many words on each side count as neighbours. (Different from an LLM's context window, Phase 5.) *(Phase 3b)*
+- **Negative sampling**: for each real pair, also pick a few random words and push them away. Much cheaper than comparing against every word. *(Phase 3b)*
+- **Dot product**: multiply two vectors number by number and add up the results. Large when they point the same way. *(Phase 3b)*
+- **Cosine similarity**: the dot product of two vectors after scaling them to length 1, from -1 (opposite) through 0 (perpendicular) to 1 (same direction). *(Phase 3b)*
+- **Nearest neighbours**: the words whose vectors are most similar to a given vector. *(Phase 3b)*
+- **Word analogy**: vector arithmetic like king - man + woman ≈ queen, showing that relationships appear as consistent directions. *(Phase 3b)*
+- **Transformer**: a neural network built from stacked blocks of attention + feed-forward. The architecture behind GPT, Claude and Gemini. *(Phase 4a)*
+- **Tensor**: a multi-dimensional array of numbers. Shape `(1, 8, 32)` means 1 sentence × 8 tokens × 32 numbers each. *(Phase 4a)*
+- **Self-attention**: each token scores how relevant every visible token is, then takes a weighted mix of their information. *(Phase 4a)*
+- **Query / key / value**: three vectors made from each token by learned weights. Query = what I'm looking for, key = what I offer, value = what I pass on. *(Phase 4a)*
+- **Attention weights**: the softmaxed scores. Each row adds up to 1 and says how much each token draws from each earlier one. *(Phase 4a)*
+- **Softmax**: turns a list of any numbers into positive weights that add up to 1, with bigger numbers getting more weight. *(Phase 4a)*
+- **Causal mask**: blocks every token from attending to later tokens, so the model can't "peek" at the word it's meant to predict. *(Phase 4a)*
+- **Multi-head attention**: several attention operations side by side, each with its own Q/K/V weights, so they can learn to track different things. *(Phase 4a)*
+- **Feed-forward layer**: a small two-layer network applied to each token's vector separately, after attention. *(Phase 4a)*
+- **Residual connection**: adding a layer's output to its input (`x + layer(x)`) instead of replacing it. This keeps deep stacks trainable. *(Phase 4a)*
+- **Layer normalisation**: rescaling each vector to a standard spread before a layer, which keeps training stable. *(Phase 4a)*
+- **Positional embedding**: a learned vector per position (0, 1, 2...) added to each token's vector, so the model knows word order. *(Phase 4a)*
+- **Logits**: the raw, unnormalised scores the model outputs, one per vocabulary token. Softmax turns them into probabilities. *(Phase 4a)*
+- **Cross-entropy loss**: the language-model loss. It's low when the model gave the actual next token a high probability. Random guessing scores ln(vocabulary size). *(Phase 4a)*
+- **Training set / validation set**: the data the model learns from, and data held back to check how it does on text it has never seen. *(Phase 4b)*
+- **Test set**: a third set, touched only once at the very end. Choosing the "best" model using the validation set makes the validation score slightly optimistic. *(Phase 4b)*
+- **Overfitting**: the model fits the training data better and better but gets worse on new data. It's memorising instead of generalising. *(Phase 4b)*
+- **Generalisation**: doing well on new data, not just the training data. The actual goal. *(Phase 4b)*
+- **Memorisation**: reproducing training text word for word. A risk for privacy, copyright and fake "quality". *(Phase 4b)*
+- **Early stopping / best checkpoint**: keeping the version of the model from the step with the best validation loss, not the last step. *(Phase 4b)*
+- **Checkpoint**: a saved snapshot of a model: settings, weights, tokenizer and training info. *(Phase 4b)*
+- **Step / batch**: one weight update, computed from one batch (here, 32 random 32-token windows). *(Phase 4b)*
+- **Optimizer (AdamW)**: the algorithm that turns gradients into weight updates. A smarter version of Phase 2's "nudge by learning rate × gradient". *(Phase 4b)*
+- **Dropout**: during training, randomly switching off some signals, so the model can't rely on memorised exact paths. Off when generating. *(Phase 4b)*
+- **Loss per character**: the loss spread over characters instead of tokens, so tokenizers with different vocabularies can be compared fairly. *(Phase 4b)*
+- **Greedy decoding**: always picking the single most likely next token. Repeatable, but prone to loops. *(Phase 4b)*
+- **Autoregressive generation**: generate one token, append it to the input, repeat. *(Phase 4b)*
+- **Previous-token head**: an attention head that learned to look mostly at the token just before. A pattern also found in real LLMs. *(Phase 4b)*
+- **Data leakage**: information from the evaluation data getting into training, which inflates scores. We avoid it by building the tokenizer from training stories only. *(Phase 4b)*
+- **Sampling**: choosing the next token at random, in proportion to its probability, instead of always taking the top one. *(Phase 5a)*
+- **Temperature**: divides the logits before softmax. Below 1 sharpens (safer, more repetitive), above 1 flattens (more varied, more errors). 0 means greedy. *(Phase 5a)*
+- **Top-p (nucleus sampling)**: only sample from the smallest set of top tokens whose probabilities add up to at least p. How many tokens that is depends on how confident the model is. *(Phase 5a)*
+- **Long tail**: the many unlikely tokens. Each is rare, but together they're often picked, and they produce most of the nonsense. Top-p cuts the tail. *(Phase 5a)*
+- **Determinism**: the same input gives the same output. Greedy decoding is deterministic; sampling is only repeatable if the random seed is fixed. *(Phase 5a)*
+- **Context window (LLM)**: the maximum number of tokens the model can take in at once. Anything older is cropped off, usually from the front, by the application. *(Phase 5a)*
+- **Truncation**: cutting text to fit the context window. What's cut has no influence at all on the output. *(Phase 5a)*
+- **Proxy metric**: an automatic measure that catches one specific failure (made-up words, loops, copying) but isn't "quality" itself. *(Phase 5a)*
+- **Guardrail**: an application-level check before or after the model that enforces a rule no matter what the model does. *(Phase 5b)*
+- **Input validation / output check**: guardrails before the model (reject bad or risky input) and after it (block or flag bad output). *(Phase 5b)*
+- **System prompt**: hidden instructions placed before the user's text. It only works if the model was trained to follow instructions, and even then not every time. *(Phase 5b)*
+- **Prompt injection**: input written to override the product's instructions ("ignore all previous instructions..."). *(Phase 5b)*
+- **Hallucination**: fluent output that's false or invented. Nothing in next-token prediction checks facts. *(Phase 5b)*
+- **Out-of-distribution (OOD)**: input unlike anything in the training data. Output becomes unreliable. *(Phase 5b)*
+- **False positive / false negative**: a guard blocking something harmless / letting something harmful through. Tightening one usually worsens the other. *(Phase 5b)*
+- **Evaluation suite**: a fixed set of test cases with expected outcomes, run repeatedly so changes can be compared over time. *(Phase 5b)*
+- **Regression**: something that used to work and stopped. A saved evaluation run lets you catch it. *(Phase 5b)*
+- **Monitoring**: recording every decision in use (our decision log) so problems are found after launch. *(Phase 5b)*
+- **Canary**: a unique fake secret planted in training data to test whether the model memorises and leaks it. *(Phase 5b)*
+- **Control (experiment)**: a comparison condition that tells you whether an effect is real, like the opposite rule "always write about the king". *(Phase 5b)*
+- **Defence in depth**: several imperfect layers (training, prompting, guardrails, evaluation, monitoring), because no single one is enough. *(Phase 5b)*
+- **Pretraining**: the first, large training stage: next-token prediction on lots of general text. Produces a base model. *(Phase 6a)*
+- **Base model**: a pretrained model that only continues text. It doesn't follow instructions. *(Phase 6a)*
+- **Fine-tuning**: continuing training from pretrained weights on a smaller, targeted dataset. Same architecture and tokenizer; only the weight values change. *(Phase 6a)*
+- **Instruction tuning / supervised fine-tuning (SFT)**: fine-tuning on instruction → answer pairs so the model answers instead of just continuing. *(Phase 6a)*
+- **Loss masking**: only grading the model on the answer tokens, not the prompt (targets set to -100, which the loss ignores). *(Phase 6a)*
+- **Catastrophic forgetting**: getting worse at earlier skills after fine-tuning (our story loss rose from 3.21 to 3.36). *(Phase 6a)*
+- **Transfer learning**: knowledge from pretraining helping a new task (held-out loss 2.16 from pretrained vs 3.31 from scratch). *(Phase 6a)*
+- **Preference data**: pairs of answers to the same prompt, labelled chosen and rejected, usually by human raters. *(Phase 6a)*
+- **RLHF (reinforcement learning from human feedback)**: train a reward model on human preferences, then optimise the LLM to score highly on it, while staying close to the original. *(Phase 6a)*
+- **Reward model**: a separate model trained to predict which answer humans would prefer. Used in classic RLHF, not in DPO. *(Phase 6a)*
+- **DPO (direct preference optimisation)**: tunes the model directly on preference pairs, making chosen answers more likely and rejected ones less likely relative to a frozen reference model. *(Phase 6a)*
+- **Reference model / beta**: the frozen starting copy that DPO measures against, and how strongly the model is kept close to it. A small beta allows more change and more drift. *(Phase 6a)*
+- **Length bias**: longer answers get lower total probability (more tokens, each below 1), which skews comparisons. *(Phase 6a)*
+- **Reward hacking / metric gaming**: the optimised score improves without the intended behaviour improving (preference accuracy 100%, answers like "The rapy."). *(Phase 6a)*
+- **Tool call**: structured text in which the model proposes an action. It does nothing by itself. *(Phase 6b)*
+- **Harness**: the application loop around the model that reads proposals, runs permitted tools and feeds results back. *(Phase 6b)*
+- **Execution boundary**: the line between text the model writes and actions code performs. Only the application can cross it. *(Phase 6b)*
+- **Schema validation**: checking a call has exactly the expected fields, types and ranges before doing anything with it. *(Phase 6b)*
+- **Least privilege**: granting only the tools a request needs, so a fooled model can do less damage. *(Phase 6b)*
+- **Human approval**: a person confirming one specific action before it runs. *(Phase 6b)*
+- **Indirect prompt injection**: instructions hidden in data the model reads, such as a tool result or web page. *(Phase 6b)*
+- **Grounding**: basing an answer on a retrieved source instead of the model's memory. It helps only if the answer repeats the source correctly. *(Phase 6b)*
+- **Virtual environment (venv)**: a project-private folder of Python libraries, so installing them doesn't affect the rest of the computer.

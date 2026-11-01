@@ -1,0 +1,20 @@
+{
+  "layers": "single",
+  "task": "or",
+  "epochs": 5000,
+  "final_loss": 0.000244,
+  "parameters": 3,
+  "weights": {
+    "w": [
+      [
+        7.9424
+      ],
+      [
+        7.9424
+      ]
+    ],
+    "b": [
+      -3.7351
+    ]
+  }
+}
